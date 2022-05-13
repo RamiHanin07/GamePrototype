@@ -12,6 +12,8 @@ public class healingItem : MonoBehaviour
 
     [SerializeField] public TMP_Text txt;
 
+    private Animator anim;
+
     int HEAL_MAX_CHARGES = 5;
     int HEAL_AMOUNT = 60;
     int healCharges;
@@ -24,6 +26,12 @@ public class healingItem : MonoBehaviour
             if(getHealCharges() > 0){
                 useHeal();
             }
+            else{
+                print(getHealCharges());
+            }
+        }
+        else{
+            print(playerMovement.canAttack());
         }
         txt.text = healCharges.ToString();
 
@@ -31,6 +39,7 @@ public class healingItem : MonoBehaviour
     
 
     private void useHeal(){
+        playerMovement.getAnim().SetTrigger("drink");
         playerAttributes.addHealth(HEAL_AMOUNT);
         healCharges--;
     }

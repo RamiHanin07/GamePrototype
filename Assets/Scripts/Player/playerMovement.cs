@@ -272,7 +272,9 @@ public class playerMovement : MonoBehaviour
     }
 
     public bool getIsAttacking(){
-        if((anim.GetCurrentAnimatorStateInfo(0).IsName("horizontalAttack") || anim.GetCurrentAnimatorStateInfo(0).IsName("Special")) && !anim.IsInTransition(0)){
+        if((anim.GetCurrentAnimatorStateInfo(0).IsName("horizontalAttack") || 
+        anim.GetCurrentAnimatorStateInfo(0).IsName("Special") ||
+        anim.GetCurrentAnimatorStateInfo(0).IsName("Drink")) && !anim.IsInTransition(0)){
            isAttacking = true;
            //print("is Attacking");
        }else{
@@ -281,6 +283,9 @@ public class playerMovement : MonoBehaviour
        return isAttacking;
     }
 
+    public Animator getAnim(){
+        return anim;
+    }
     
 
 

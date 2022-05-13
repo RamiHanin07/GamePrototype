@@ -57,6 +57,7 @@ public class playerAttack : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.V) && cooldownTimer > attackCooldown && playerMovement.canAttack()){
             if(!playerAttributes.getNegativeStam()){
                 specialAttack();
+                playerAttributes.remStamina(specialStaminaCost);
             }
 
         }
