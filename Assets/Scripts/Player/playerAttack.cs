@@ -69,7 +69,7 @@ public class playerAttack : MonoBehaviour
         anim.SetTrigger("attack");
         cooldownTimer = 0;
 
-        print("attack() in playerAttack");
+        //print("attack() in playerAttack");
 
     }
 

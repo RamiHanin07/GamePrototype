@@ -5,15 +5,26 @@ using UnityEngine;
 public class playerAttributes : MonoBehaviour
 {
 
+    
     private float HEALTH_MAX = 100;
     private float STAMINA_MAX = 100;
     private float health;
     private float stamina;
     private Animator anim;
+    private bool dead = false;
 
     private bool negativeStam = false;
 
     [SerializeField] private healingItem healingItem;
+    [SerializeField] private GameOver GameOver;
+    [SerializeField] playerMovement playerMovement;
+
+    [SerializeField] Vector2 SpawnPoint;
+    private bool gameIsPaused = false;
+
+
+
+
 
 
     void Awake()
@@ -33,11 +44,23 @@ public class playerAttributes : MonoBehaviour
             addStamina(.7f);   
         }
 
+        
+    }
+
+    void Update(){
+
         if(Input.GetKeyDown(KeyCode.T)){
-            rest();
+            //rest();
         }
 
-        
+        if(getHealth() <= 0){
+            StartCoroutine(death());
+        }
+
+        if(Input.GetKeyDown(KeyCode.Escape)){
+            gameIsPaused = !gameIsPaused;
+            pauseGame();
+        }
     }
 
     public float getHealth(){
@@ -75,7 +98,7 @@ public class playerAttributes : MonoBehaviour
 
     public void remStamina(float tempStam){
         stamina -= tempStam;
-        print(stamina);
+        //print(stamina);
         if(stamina < 0){
             negativeStam = true;
         }
@@ -99,11 +122,44 @@ public class playerAttributes : MonoBehaviour
         return negativeStam;
     }
 
-    public void rest(){
+    public void rest(Vector2 point){
         addStamina(200);
         healingItem.rest();
         addHealth(200);
+        setSpawnPoint(point);
+        anim.SetTrigger("drink");
     }
+
+
+    public IEnumerator death(){
+        dead = true;
+        //print("ded");
+        yield return StartCoroutine(GameOver.deathScreen());
+        dead = false;
+        anim.SetTrigger("drink");
+        playerMovement.getBody().position = SpawnPoint;
+        addHealth(200);
+    }
+
+
+    public bool getDead(){
+        return dead;
+    }
+
+    public void setSpawnPoint(Vector2 point){
+        SpawnPoint = point;
+    }
+
+
+    public void pauseGame(){
+        if(gameIsPaused){
+            Time.timeScale = 0;
+        }else{
+            Time.timeScale = 1;
+        }
+    }
+
+
 
  
 

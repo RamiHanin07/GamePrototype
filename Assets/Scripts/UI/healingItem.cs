@@ -30,9 +30,6 @@ public class healingItem : MonoBehaviour
                 print(getHealCharges());
             }
         }
-        else{
-            print(playerMovement.canAttack());
-        }
         txt.text = healCharges.ToString();
 
     }
