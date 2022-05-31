@@ -21,6 +21,7 @@ public class playerMovement : MonoBehaviour
    private float timeSinceLastJump;
    private float timeSinceLastDash;
    private bool isDashing;
+   private bool isTeleporting;
    private bool isAttacking;
    private float jumpDuration;
    private float currentWep = 1;
@@ -30,6 +31,7 @@ public class playerMovement : MonoBehaviour
 
    private bool onLadder = false;
    private bool isClimbingLadder = false;
+   private float dashInputDirection;
 
 
    //Current Wep:
@@ -43,6 +45,18 @@ public class playerMovement : MonoBehaviour
 
    private Collider2D Ladder = null;
 
+   private bool move = false;
+
+   private float dashTime;
+   [SerializeField] private int dashSpeed = 15;
+
+   private bool jump = false;
+   private bool fastFall = false;
+
+   private int ladderInputDirection;
+   private bool climbLadderBool;
+
+
 
 
 
@@ -54,6 +68,7 @@ public class playerMovement : MonoBehaviour
        boxCollider = GetComponent<BoxCollider2D>();
        playerAttributes = GetComponent<playerAttributes>();
        weaponSpeed = baseSpeed;
+       Application.targetFrameRate = 120;
    }
 
    private void Update(){
@@ -97,9 +112,8 @@ public class playerMovement : MonoBehaviour
 
         //Check to see if you're attacking
     
-        if(!isDashing && !isAttacking && !dead && !isClimbingLadder){
-
-            body.velocity = new Vector2(Input.GetAxis("Horizontal") * weaponSpeed, body.velocity.y);
+        if(!isDashing && !isAttacking && !dead && !isClimbingLadder && !isTeleporting){
+            move = true;
         }
         else if(dead){
             body.velocity = new Vector2(0,0);
@@ -118,7 +132,7 @@ public class playerMovement : MonoBehaviour
     
 
         //Create regular jump
-       if(Input.GetKeyDown(KeyCode.Space) && isGrounded() && !isAttacking && !dead && !isClimbingLadder){
+       if(Input.GetKeyDown(KeyCode.Space) && isGrounded() && !isAttacking && !dead && !isClimbingLadder && !isTeleporting){
            currentJumpLength = 0;
            StartCoroutine(Jump());
        }
@@ -135,7 +149,7 @@ public class playerMovement : MonoBehaviour
        }
 
         //Create double jump
-       if(!onWall() && !isGrounded() && !dead && !isClimbingLadder){
+       if(!isGrounded() && !dead && !isClimbingLadder && !isTeleporting){
            if(Input.GetKeyDown(KeyCode.Space) && canDoubleJump){
                StartCoroutine(Jump());
                canDoubleJump = false;
@@ -147,7 +161,7 @@ public class playerMovement : MonoBehaviour
            canDash = true;
        }
 
-       if(Input.GetKeyDown(KeyCode.X) && canDash && !isAttacking && !dead && !isClimbingLadder){
+       if(Input.GetKeyDown(KeyCode.X) && canDash && !isAttacking && !dead && !isClimbingLadder && !isTeleporting){
            if(!playerAttributes.getNegativeStam()){
                playerAttributes.remStamina(dashStaminaCost);
                 StartCoroutine(Dash());
@@ -155,9 +169,9 @@ public class playerMovement : MonoBehaviour
        }
 
        //FastFall
-       if(!isGrounded() && !dead && !isClimbingLadder){
+       if(!isGrounded() && !dead && !isClimbingLadder && !isTeleporting){
            if(Input.GetKeyDown(KeyCode.DownArrow)){
-               fastFall();
+               fastFall = true;
            }
        }
 
@@ -182,7 +196,7 @@ public class playerMovement : MonoBehaviour
        }
 
 
-        if(!dead){
+        if(!dead && !isTeleporting){
             //Flips player sprite around when turning left or turning right
             if(horizontalInput > 0.01f && isDashing == false && !isAttacking){
                 transform.localScale = new Vector2(1,1);
@@ -192,9 +206,6 @@ public class playerMovement : MonoBehaviour
             }
         }
 
-
-
-
         if(dead){
             StopCoroutine(Jump());
             StopCoroutine(Dash());
@@ -203,22 +214,53 @@ public class playerMovement : MonoBehaviour
         anim.SetBool("walk", horizontalInput != 0);
         anim.SetBool("grounded", isGrounded());
         anim.SetBool("onLadder", isClimbingLadder);
-        //anim.SetBool("dash", isDashing);
+        anim.SetBool("isTeleporting", isTeleporting);
+   }
 
-      
+    private void FixedUpdate() {
+        if(move){
+            body.velocity = new Vector2(Input.GetAxis("Horizontal") * weaponSpeed, body.velocity.y);
+            move = false;
+        }
+        if(isDashing){
+            body.velocity = new Vector2(dashInputDirection, 0).normalized * dashSpeed;
+        }
+        if(isTeleporting){
+            body.velocity = new Vector2(0, body.velocity.y);
+        }
+        if(jump){
+            body.velocity = new Vector2(body.velocity.x, jumpSpeed);
+        }
+        if(fastFall){
+            const int fallSpeed = -15;
+            body.velocity  = new Vector2(body.velocity.x, fallSpeed);
+            fastFall = false;
+        }
+        if(climbLadderBool){
+            //print(inputDirection);
+            if(ladderInputDirection == 0){
+                body.bodyType = RigidbodyType2D.Kinematic;
+            }
+            else{
+                body.bodyType = RigidbodyType2D.Dynamic;
+            }
 
-
+            body.velocity = new Vector2(0, ladderInputDirection * ladderClimbSpeed);
+            climbLadderBool = false;
+        }
+       
    }
 
    private IEnumerator Jump(){
        //int jumpSpeed = 8;
        float startTime = Time.time;
        float jumpTime = .25f;
+       jump = true;
        anim.SetTrigger("jump");
         while(Time.time < startTime + jumpTime){
-            body.velocity = new Vector2(body.velocity.x, jumpSpeed);
             yield return null;
         }
+        jump = false;
        timeSinceLastJump = 0;
    }
 
@@ -228,43 +270,36 @@ public class playerMovement : MonoBehaviour
         anim.SetTrigger("jump");
    }
 
-   private void fastFall(){
-       //print("fastFalling");
-       const int fallSpeed = -15;
-       body.velocity  = new Vector2(body.velocity.x, fallSpeed);
-   }
-
-
-
-
    private IEnumerator Dash(){
-       const int dashSpeed = 30;
        float startTime = Time.time;
-       float dashTime = .22f;
+       dashTime = .22f;
+       float immunityTime = .12f;
        anim.SetTrigger("dash");
        canDash = false;
-       float inputDirection = Input.GetAxis("Horizontal");
-       if(inputDirection == 0){
+       dashInputDirection = Input.GetAxis("Horizontal");
+       if(dashInputDirection == 0){
            if(transform.localScale.x == 1){
-               inputDirection = 1;
+               dashInputDirection = 1;
            }else{
-               inputDirection = -1;
+               dashInputDirection = -1;
            }
        }
-       isDashing = true;
-       if(Mathf.Sign(inputDirection) == 1){
+       if(Mathf.Sign(dashInputDirection) == 1){
            transform.localScale = new Vector2(1,1);
        }
        else{
            transform.localScale = new Vector2(-1,1);
        }
-       body.velocity = new Vector2(inputDirection, 0).normalized * dashSpeed;
+       isDashing = true;
+       print("ignoring collision true");
+       Physics2D.IgnoreLayerCollision(9,10, true);
        while(Time.time < startTime + dashTime){
-           body.velocity = new Vector2(body.velocity.x, 0);
+           if(Time.time >= startTime + immunityTime){
+               print("ignoring collision false");
+               Physics2D.IgnoreLayerCollision(9,10, false);
+           }
            yield return null;
        }
-
-        body.velocity = new Vector2(inputDirection * weaponSpeed, 0);
         isDashing = false;
         timeSinceLastDash = 0;
    }
@@ -312,7 +347,7 @@ public class playerMovement : MonoBehaviour
 
 
     public bool canAttack(){
-        return !isDashing && !onWall() && isGrounded() && !isAttacking;
+        return !isDashing && isGrounded() && !isAttacking;
     }
 
 
@@ -366,27 +401,28 @@ public class playerMovement : MonoBehaviour
 
     private void ladderClimb(){
         isClimbingLadder = true;
-        int inputDirection = 0;
+
+        climbLadderBool = true;
+        ladderInputDirection = 0;
         if(Input.GetKey(KeyCode.UpArrow)){
-            inputDirection = 1;
+            ladderInputDirection = 1;
             //print(inputDirection);
         }
         if(Input.GetKey(KeyCode.DownArrow)){
-            inputDirection = -1;
+            ladderInputDirection = -1;
             //print(inputDirection);
         }
 
-        //print(inputDirection);
-        if(inputDirection == 0){
-            body.bodyType = RigidbodyType2D.Kinematic;
-        }
-        else{
-            body.bodyType = RigidbodyType2D.Dynamic;
-        }
 
-        body.velocity = new Vector2(0, inputDirection * ladderClimbSpeed);
+        anim.SetInteger("ladderDirection", ladderInputDirection);
+    }
 
-        anim.SetInteger("ladderDirection", inputDirection);
+    public void setisTeleporting(bool TP){
+        isTeleporting = TP;
+    }
+
+    public bool getisClimbingLadder(){
+        return isClimbingLadder;
     }
     
 

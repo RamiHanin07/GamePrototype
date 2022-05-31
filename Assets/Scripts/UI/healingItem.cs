@@ -38,6 +38,7 @@ public class healingItem : MonoBehaviour
     private void useHeal(){
         playerMovement.getAnim().SetTrigger("drink");
         playerAttributes.addHealth(HEAL_AMOUNT);
+        playerAttributes.addCorruption(5);
         healCharges--;
     }
 

@@ -10,20 +10,31 @@ public class Portal: MonoBehaviour
 
     private bool triggerActive = false;
 
+    private float step;
+
     [SerializeField] private TMP_Text UI_text;
 
     [SerializeField] private GameObject UI_text_gameObject;
 
     [SerializeField] playerMovement playerMovement;
 
+    [SerializeField] playerAttributes playerAttributes;
+
 
     [SerializeField] Portal partnerPortalUp = null;
     [SerializeField] Portal partnerPortalDown = null;
 
-    [SerializeField] private bool isActive = false;
+    [SerializeField] private bool isActive = true;
+
+    private bool usePortalDownBool = false;
+    private bool usePortalUpBool = false;
+
+    private Sprite portalPlayerSprite;
 
     private Sprite portalOn;
     private SpriteRenderer spriteRenderer;
+
+    private bool isTeleporting = false;
 
     // Update is called once per frame
 
@@ -77,34 +88,34 @@ public class Portal: MonoBehaviour
             }
         }
 
-        if(isActive && triggerActive && playerMovement.isGrounded() && partnerPortalUp != null && partnerPortalDown != null){
+        if(isActive && triggerActive && playerMovement.isGrounded() && partnerPortalUp != null && partnerPortalDown != null && !isTeleporting){
             if(partnerPortalUp.getIsActive() && Input.GetKeyDown(KeyCode.UpArrow)){
                 UI_text_gameObject.SetActive(false);
-                usePortalUp();
+                StartCoroutine(usePortalUp());
             }
             if(partnerPortalDown.getIsActive() && Input.GetKeyDown(KeyCode.DownArrow)){
                 UI_text_gameObject.SetActive(false);
-                usePortalDown();
+                StartCoroutine(usePortalDown());
             }
         }
-        else if(isActive && triggerActive && Input.GetKeyDown(KeyCode.UpArrow) && playerMovement.isGrounded()){
+        else if(isActive && triggerActive && Input.GetKeyDown(KeyCode.UpArrow) && playerMovement.isGrounded() && !isTeleporting){
             if(partnerPortalUp != null){
                  if(partnerPortalUp.getIsActive()){
                     //print("partner is active");
                     UI_text_gameObject.SetActive(false);
-                    usePortalUp();
+                    StartCoroutine(usePortalUp());
                 }
                 else{
                     //print("partner is not active");
                 }
             }
         }
-        else if(isActive && triggerActive && Input.GetKeyDown(KeyCode.DownArrow) && playerMovement.isGrounded()){
+        else if(isActive && triggerActive && Input.GetKeyDown(KeyCode.DownArrow) && playerMovement.isGrounded() && !isTeleporting){
             if(partnerPortalDown != null){
                 if(partnerPortalDown.getIsActive()){
                     //print("partner is active");
                     UI_text_gameObject.SetActive(false);
-                    usePortalDown();
+                    StartCoroutine(usePortalDown());
                 }
                 else{
                     //print("partner is not active");
@@ -115,38 +126,78 @@ public class Portal: MonoBehaviour
             //print("isActive: " + isActive);
             //print("triggerActive: " + triggerActive);
         }
+
+    }
+
+    private void FixedUpdate() {
+        step = Time.deltaTime * 15;
+        if(usePortalDownBool){
+            if(!playerMovement.getBody().isKinematic){
+                playerMovement.getBody().isKinematic = true;
+            }
+            playerMovement.getBody().transform.position = Vector2.MoveTowards(playerMovement.getBody().transform.position, partnerPortalDown.transform.position, step);
+        }
+        if(usePortalUpBool){
+            if(!playerMovement.getBody().isKinematic){
+                playerMovement.getBody().isKinematic = true;
+            }
+            playerMovement.getBody().transform.position = Vector2.MoveTowards(playerMovement.getBody().transform.position, partnerPortalUp.transform.position, step);
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D other) {
         if(other.CompareTag("Player")){
             triggerActive = true;
-            //print(triggerActive);
             UI_text_gameObject.SetActive(true); 
         }
         else{
-            //print(other);
         }
     }
 
     private void OnTriggerExit2D(Collider2D other){
         if(other.CompareTag("Player")){
-            //print("leaving trigger");
             triggerActive = false;
             UI_text_gameObject.SetActive(false);
         }
     }
 
-    private void usePortalUp(){
-        //print("using portal");
-        playerMovement.getBody().position = partnerPortalUp.transform.position;
-        playerMovement.getBody().velocity = new Vector2(0,0);
+    private IEnumerator usePortalUp(){
+        playerMovement.getBody().isKinematic = true;
+        isTeleporting = true;
+        playerMovement.setisTeleporting(isTeleporting);
+        usePortalUpBool = true;
+        playerMovement.getBody().transform.position = transform.position;
+        playerAttributes.setInCorruption(true);
+        while(playerMovement.getBody().transform.position != partnerPortalUp.transform.position){
+            playerAttributes.addCorruption(.2f);
+            yield return null;
+        }
+        playerAttributes.setInCorruption(false);
+        usePortalUpBool = false;
+        playerMovement.getBody().isKinematic = false;
+        isTeleporting = false;
+        playerMovement.setisTeleporting(isTeleporting);
+        
     }
 
-    private void usePortalDown(){
-        //print("using portal");
-        playerMovement.getBody().position = partnerPortalDown.transform.position;
-        playerMovement.getBody().velocity = new Vector2(0,0);
+    private IEnumerator usePortalDown(){
+        playerMovement.getBody().isKinematic = true;
+        isTeleporting = true;
+        playerMovement.setisTeleporting(isTeleporting);
+        playerMovement.getBody().transform.position = transform.position;
+        usePortalDownBool = true;
+        playerAttributes.setInCorruption(true);
+        while(playerMovement.getBody().transform.position != partnerPortalDown.transform.position){
+            playerAttributes.addCorruption(.2f);
+            yield return null;
+        }
+        playerAttributes.setInCorruption(false);
+        usePortalDownBool = false;
+        playerMovement.getBody().isKinematic = false;
+        isTeleporting = false;
+        playerMovement.setisTeleporting(isTeleporting);
     }
+
 
     public bool getIsActive(){
         return isActive;
@@ -155,8 +206,10 @@ public class Portal: MonoBehaviour
     public void activate(){
         isActive = true;
         spriteRenderer.sprite = portalOn;
-        //print(isActive);
-        //print("activating");
+    }
+
+    public bool getIsTeleporting(){
+        return isTeleporting;
     }
         
 }

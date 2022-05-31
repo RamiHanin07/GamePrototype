@@ -8,12 +8,17 @@ public class playerAttributes : MonoBehaviour
     
     private float HEALTH_MAX = 100;
     private float STAMINA_MAX = 100;
+    private float CORRUPTION_MAX = 100;
     private float health;
     private float stamina;
+    private float corruption;
     private Animator anim;
     private bool dead = false;
 
     private bool negativeStam = false;
+    private bool irradiated = false;
+
+    private bool hasCollide = false;
 
     [SerializeField] private healingItem healingItem;
     [SerializeField] private GameOver GameOver;
@@ -21,6 +26,14 @@ public class playerAttributes : MonoBehaviour
 
     [SerializeField] Vector2 SpawnPoint;
     private bool gameIsPaused = false;
+
+    private bool inCorruption = false;
+
+    private bool weaponDamage;
+
+    private float collideTimer = 1;
+    private float startTime = 0;
+    private GameObject[] enemyList;
 
 
 
@@ -32,6 +45,13 @@ public class playerAttributes : MonoBehaviour
         anim = GetComponent<Animator>();
         health = HEALTH_MAX;
         stamina = STAMINA_MAX;
+        corruption = 0;
+        if(enemyList == null){
+            enemyList = GameObject.FindGameObjectsWithTag("Enemy");
+        }else{
+            print("else");
+        }
+        
         
     }
 
@@ -39,11 +59,23 @@ public class playerAttributes : MonoBehaviour
     void FixedUpdate()
     {
         
-        if((anim.GetCurrentAnimatorStateInfo(0).IsName("Idle") || 
+        if((playerMovement.getisClimbingLadder() || anim.GetCurrentAnimatorStateInfo(0).IsName("Idle") || 
             anim.GetCurrentAnimatorStateInfo(0).IsName("Walk") ) && !anim.IsInTransition(0)){
             addStamina(.7f);   
         }
 
+        if(irradiated){
+            remHealth(.2f);
+        }
+
+        if(!inCorruption){
+            if(irradiated){
+                remCorruption(.3f);
+            }
+            else{
+                remCorruption(.4f);
+            }
+        }
         
     }
 
@@ -61,6 +93,11 @@ public class playerAttributes : MonoBehaviour
             gameIsPaused = !gameIsPaused;
             pauseGame();
         }
+
+        if(Time.time > startTime + collideTimer){
+            hasCollide = false;
+        }
+
     }
 
     public float getHealth(){
@@ -79,6 +116,13 @@ public class playerAttributes : MonoBehaviour
         return STAMINA_MAX;
     }
 
+    public float getCorruption(){
+        return corruption;
+    }
+    public float getCorruptionMax(){
+        return CORRUPTION_MAX;
+    }
+
     public void addStamina(float tempStam){
         stamina += tempStam;
         if(stamina > STAMINA_MAX){
@@ -94,6 +138,27 @@ public class playerAttributes : MonoBehaviour
             health = HEALTH_MAX;
         }
         return;
+    }
+
+    public void addCorruption(float tempCorruption){
+        //print("adding corruption");
+        corruption += tempCorruption;
+        if(corruption > CORRUPTION_MAX){
+            irradiated = true;
+        }
+        if(corruption > CORRUPTION_MAX + 50){
+            corruption = CORRUPTION_MAX;
+        }
+    }
+
+    public void remCorruption(float tempCorruption){
+        corruption -= tempCorruption;
+        if(corruption < 0){
+            corruption = 0;
+        }
+        if(corruption == 0){
+            irradiated = false;
+        }
     }
 
     public void remStamina(float tempStam){
@@ -122,23 +187,35 @@ public class playerAttributes : MonoBehaviour
         return negativeStam;
     }
 
+    public bool getIsIrradiated(){
+        return irradiated;
+    }
+
     public void rest(Vector2 point){
         addStamina(200);
         healingItem.rest();
         addHealth(200);
         setSpawnPoint(point);
         anim.SetTrigger("drink");
+        remCorruption(200);
+        irradiated = false;
+        addCorruption(20);
+        
     }
 
 
     public IEnumerator death(){
         dead = true;
         //print("ded");
+        resetEnemies();
         yield return StartCoroutine(GameOver.deathScreen());
         dead = false;
         anim.SetTrigger("drink");
         playerMovement.getBody().position = SpawnPoint;
         addHealth(200);
+        remCorruption(200);
+        irradiated = false;
+        
     }
 
 
@@ -159,6 +236,50 @@ public class playerAttributes : MonoBehaviour
         }
     }
 
+    public void setInCorruption(bool corrupt){
+        inCorruption = corrupt;
+    }
+
+    public bool getInCorruption(){
+        return inCorruption;
+    }
+
+    public bool getHasCollide(){
+        return hasCollide;
+    }
+
+    public void setHasCollide(bool temp){
+        hasCollide = temp;
+        if(hasCollide){
+            startTime = Time.time;
+        }
+    }
+
+    private void resetEnemies(){
+        for(int i = 0; i < enemyList.Length; i++){
+            print(enemyList[i]);
+            StartCoroutine(resetEnemy(enemyList[i]));
+        }
+    }
+
+    private IEnumerator resetEnemy(GameObject enemy){
+        float startTime = Time.time;
+        float deathTime = 1;
+
+        enemy.transform.position = new Vector2(-500,-500);
+        //print("moved");
+        
+        enemy.GetComponent<Animator>().Rebind();
+        while(Time.time < startTime + deathTime)
+        {
+            //print("waiting");
+            yield return null;
+        }
+
+        enemy.SetActive(false);
+        enemy.SetActive(true);
+        
+    }
 
 
  

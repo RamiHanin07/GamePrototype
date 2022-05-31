@@ -20,6 +20,9 @@ public class playerAttack : MonoBehaviour
 
     private float cooldownTimer = 10000;
 
+    private float weaponDamage = 25;
+
+
 
     void Awake()
     {
@@ -32,6 +35,7 @@ public class playerAttack : MonoBehaviour
             attackStaminaCost = LSAttackStaminaCost;
             specialStaminaCost = LSSpecialStaminaCost;
         }else if(currentWeapon == 2){
+            weaponDamage = 40;
             attackStaminaCost = 25;
             specialStaminaCost = 35;
         }else if(currentWeapon == 3){
@@ -62,6 +66,19 @@ public class playerAttack : MonoBehaviour
 
         }
 
+        currentWeapon = playerMovement.getWeapon();
+        if(currentWeapon == 1){
+            attackStaminaCost = LSAttackStaminaCost;
+            specialStaminaCost = LSSpecialStaminaCost;
+        }else if(currentWeapon == 2){
+            weaponDamage = 40;
+            attackStaminaCost = 25;
+            specialStaminaCost = 35;
+        }else if(currentWeapon == 3){
+            attackStaminaCost = 5;
+            specialStaminaCost = 25;
+        }
+
 
     }
 
@@ -82,4 +99,13 @@ public class playerAttack : MonoBehaviour
         anim.SetTrigger("special");
         cooldownTimer = 0;
     }
+
+    public void setWeaponDamage(float temp){
+        weaponDamage = temp;
+    }
+
+    public float getWeaponDamage(){
+        return weaponDamage;
+    }
+
 }
