@@ -136,30 +136,31 @@ public class corruptedFighter : MonoBehaviour
         playerXPos = new Vector2(player.transform.position.x, transform.position.y);
         if(moveTowards){
             //print("moving towards");
-            Vector2 move = Vector2.MoveTowards(transform.position, playerXPos, step);
-            transform.position = move;
             if(transform.position.x < player.transform.position.x){
                 transform.localScale = new Vector2(1,1);
             }
             else{
                 transform.localScale = new Vector2(-1, 1);
             }
+            Vector2 move = Vector2.MoveTowards(transform.position, playerXPos, step);
+            transform.position = move;
+            print(step + " step corrupted Fighter");
             moveTowards = false;
         }
         if(reset){
             //print("resetting fixedUpdate");
-            Vector2 move = Vector2.MoveTowards(transform.position, originalPosition, step);
-            transform.position = move;
             if(transform.position.x < originalPosition.x){
                 transform.localScale = new Vector2(1,1);
             }
             else{
                 transform.localScale = new Vector2(-1, 1);
             }
+            Vector2 move = Vector2.MoveTowards(transform.position, originalPosition, step);
+            transform.position = move;
             reset = false;
         }
         if(attacking){
-            print("charging");
+            //print("charging");
             body.velocity = new Vector2(chargeDirection, 0).normalized * chargeSpeed;
         }else{
             body.velocity = new Vector2(0,0);

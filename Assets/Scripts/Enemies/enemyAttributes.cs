@@ -51,7 +51,7 @@ public class enemyAttributes : MonoBehaviour
         }
         if(Time.time > startTime + staggerTimer){
             takenDamage = false;
-            print("taken damage off");
+            //print("taken damage off");
         }
     }
 

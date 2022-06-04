@@ -32,6 +32,7 @@ public class playerAttack : MonoBehaviour
         currentWeapon = playerMovement.getWeapon();
 
         if(currentWeapon == 1){
+            weaponDamage = 25;
             attackStaminaCost = LSAttackStaminaCost;
             specialStaminaCost = LSSpecialStaminaCost;
         }else if(currentWeapon == 2){

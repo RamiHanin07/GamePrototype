@@ -69,6 +69,7 @@ public class playerMovement : MonoBehaviour
        playerAttributes = GetComponent<playerAttributes>();
        weaponSpeed = baseSpeed;
        Application.targetFrameRate = 120;
+       //Physics2D.IgnoreLayerCollision(9,10,true);
    }
 
    private void Update(){
@@ -291,12 +292,19 @@ public class playerMovement : MonoBehaviour
            transform.localScale = new Vector2(-1,1);
        }
        isDashing = true;
-       print("ignoring collision true");
+       //print("ignoring collision true");
        Physics2D.IgnoreLayerCollision(9,10, true);
        while(Time.time < startTime + dashTime){
            if(Time.time >= startTime + immunityTime){
-               print("ignoring collision false");
+               //print("ignoring collision false");
                Physics2D.IgnoreLayerCollision(9,10, false);
+           }
+           if(Physics2D.IsTouchingLayers(boxCollider, 10)){
+               print("touching layers");
+               Physics2D.IgnoreLayerCollision(9,10,true);
+           }
+           else{
+               print("not touching");
            }
            yield return null;
        }

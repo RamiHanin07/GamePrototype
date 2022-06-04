@@ -19,7 +19,7 @@ public class corruptionMiasmaTest : MonoBehaviour
         if(triggerActive){
             //print("inUpdate");
             playerAttributes.addCorruption(.2f);
-            print(playerAttributes.getCorruption());
+            //print(playerAttributes.getCorruption());
         }
 
     }
