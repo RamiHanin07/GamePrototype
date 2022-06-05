@@ -88,7 +88,7 @@ public class Portal: MonoBehaviour
             }
         }
 
-        if(isActive && triggerActive && playerMovement.isGrounded() && partnerPortalUp != null && partnerPortalDown != null && !isTeleporting){
+        if(isActive && triggerActive && partnerPortalUp != null && partnerPortalDown != null && !isTeleporting){
             if(partnerPortalUp.getIsActive() && Input.GetKeyDown(KeyCode.UpArrow)){
                 UI_text_gameObject.SetActive(false);
                 StartCoroutine(usePortalUp());
@@ -98,7 +98,7 @@ public class Portal: MonoBehaviour
                 StartCoroutine(usePortalDown());
             }
         }
-        else if(isActive && triggerActive && Input.GetKeyDown(KeyCode.UpArrow) && playerMovement.isGrounded() && !isTeleporting){
+        else if(isActive && triggerActive && Input.GetKeyDown(KeyCode.UpArrow) && !isTeleporting){
             if(partnerPortalUp != null){
                  if(partnerPortalUp.getIsActive()){
                     //print("partner is active");
@@ -110,7 +110,7 @@ public class Portal: MonoBehaviour
                 }
             }
         }
-        else if(isActive && triggerActive && Input.GetKeyDown(KeyCode.DownArrow) && playerMovement.isGrounded() && !isTeleporting){
+        else if(isActive && triggerActive && Input.GetKeyDown(KeyCode.DownArrow) && !isTeleporting){
             if(partnerPortalDown != null){
                 if(partnerPortalDown.getIsActive()){
                     //print("partner is active");

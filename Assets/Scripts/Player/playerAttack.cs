@@ -10,17 +10,16 @@ public class playerAttack : MonoBehaviour
     private Animator anim;
     private playerMovement playerMovement;
     private playerAttributes playerAttributes;
-    private float attackStaminaCost;
-    private float specialStaminaCost;
+    private float attackStaminaCost = 25;
+    private float specialStaminaCost = 35;
 
     [SerializeField] private float LSAttackStaminaCost;
     [SerializeField] private float LSSpecialStaminaCost;
 
-    private double currentWeapon;
 
     private float cooldownTimer = 10000;
 
-    private float weaponDamage = 25;
+    private float weaponDamage = 40;
 
 
 
@@ -29,20 +28,6 @@ public class playerAttack : MonoBehaviour
         anim = GetComponent<Animator>();
         playerMovement = GetComponent<playerMovement>();
         playerAttributes = GetComponent<playerAttributes>();
-        currentWeapon = playerMovement.getWeapon();
-
-        if(currentWeapon == 1){
-            weaponDamage = 25;
-            attackStaminaCost = LSAttackStaminaCost;
-            specialStaminaCost = LSSpecialStaminaCost;
-        }else if(currentWeapon == 2){
-            weaponDamage = 40;
-            attackStaminaCost = 25;
-            specialStaminaCost = 35;
-        }else if(currentWeapon == 3){
-            attackStaminaCost = 5;
-            specialStaminaCost = 25;
-        }
     }
 
     // Update is called once per frame
@@ -66,21 +51,6 @@ public class playerAttack : MonoBehaviour
             }
 
         }
-
-        currentWeapon = playerMovement.getWeapon();
-        if(currentWeapon == 1){
-            attackStaminaCost = LSAttackStaminaCost;
-            specialStaminaCost = LSSpecialStaminaCost;
-        }else if(currentWeapon == 2){
-            weaponDamage = 40;
-            attackStaminaCost = 25;
-            specialStaminaCost = 35;
-        }else if(currentWeapon == 3){
-            attackStaminaCost = 5;
-            specialStaminaCost = 25;
-        }
-
-
     }
 
     private void Attack(){
@@ -91,18 +61,9 @@ public class playerAttack : MonoBehaviour
 
     }
 
-    private void Attack2(){
-        anim.SetTrigger("attack2");
-        cooldownTimer = 0;
-    }
-
     private void specialAttack(){
         anim.SetTrigger("special");
         cooldownTimer = 0;
-    }
-
-    public void setWeaponDamage(float temp){
-        weaponDamage = temp;
     }
 
     public float getWeaponDamage(){

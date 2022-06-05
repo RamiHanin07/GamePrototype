@@ -9,39 +9,23 @@ public class playerMovement : MonoBehaviour
    private Animator anim;
    private BoxCollider2D boxCollider;
    private playerAttributes playerAttributes;
-   [SerializeField] private LayerMask groundLayer;
-   [SerializeField] private LayerMask wallLayer;
    [SerializeField] private float baseSpeed;
    [SerializeField] private float dashStaminaCost;
-   [SerializeField] private int jumpSpeed;
    [SerializeField] private int ladderClimbSpeed;
-   private float weaponSpeed;
-   private bool canDoubleJump = true;
    private bool canDash = true;
-   private float timeSinceLastJump;
    private float timeSinceLastDash;
    private bool isDashing;
    private bool isTeleporting;
    private bool isAttacking;
-   private float jumpDuration;
-   private float currentWep = 1;
-   private float nextWep = 1;
 
    private bool dead = false;
 
    private bool onLadder = false;
    private bool isClimbingLadder = false;
-   private float dashInputDirection;
+   private float dashInputDirectionX;
+   private float dashInputDirectionY;
 
-
-   //Current Wep:
-   //1 - Longsword (Default)
-   //2 - Greatsword 
-   //3 - Dagger
-   private float currentJumpLength;
-   [SerializeField] protected AnimatorOverrideController GSOverride;
-   [SerializeField] protected AnimatorOverrideController LSOverride;
-   [SerializeField] protected AnimatorOverrideController DGOverride;
+   private int walkDirection;
 
    private Collider2D Ladder = null;
 
@@ -50,11 +34,10 @@ public class playerMovement : MonoBehaviour
    private float dashTime;
    [SerializeField] private int dashSpeed = 15;
 
-   private bool jump = false;
-   private bool fastFall = false;
-
    private int ladderInputDirection;
    private bool climbLadderBool;
+   private float horizontalInput;
+   private float verticalInput;
 
 
 
@@ -67,17 +50,15 @@ public class playerMovement : MonoBehaviour
        anim = GetComponent<Animator>();
        boxCollider = GetComponent<BoxCollider2D>();
        playerAttributes = GetComponent<playerAttributes>();
-       weaponSpeed = baseSpeed;
        Application.targetFrameRate = 120;
        //Physics2D.IgnoreLayerCollision(9,10,true);
    }
 
    private void Update(){
        //Local Variables
-       timeSinceLastJump += Time.deltaTime;
        timeSinceLastDash += Time.deltaTime;
-       currentJumpLength += Time.deltaTime;
-       float horizontalInput = Input.GetAxis("Horizontal");
+       horizontalInput = Input.GetAxisRaw("Horizontal");
+       verticalInput = Input.GetAxisRaw("Vertical");
 
 
         dead = playerAttributes.getDead();
@@ -89,27 +70,10 @@ public class playerMovement : MonoBehaviour
        if(isAttacking){
            body.velocity = new Vector2(0,0);
        }
-        if(!onLadder || isGrounded()){
+        if(!onLadder){
            isClimbingLadder = false;
        }
 
-       if(canAttack() && !dead){
-           if(Input.GetKeyDown(KeyCode.Alpha1)){
-               nextWep = 1;
-           }
-           if(Input.GetKeyDown(KeyCode.Alpha2)){
-                nextWep = 2;
-           }
-           if(Input.GetKeyDown(KeyCode.Alpha3)){
-               nextWep = 3;
-           }
-       }
-
-       if(nextWep != currentWep && !dead){
-           weaponSwap();
-       }
-
-        
 
         //Check to see if you're attacking
     
@@ -132,33 +96,8 @@ public class playerMovement : MonoBehaviour
         }
     
 
-        //Create regular jump
-       if(Input.GetKeyDown(KeyCode.Space) && isGrounded() && !isAttacking && !dead && !isClimbingLadder && !isTeleporting){
-           currentJumpLength = 0;
-           StartCoroutine(Jump());
-       }
-
-       //Check for double jump reset and isClimbing
-       if(isGrounded()){
-           canDoubleJump = true;
-           isClimbingLadder = false;
-           body.bodyType = RigidbodyType2D.Dynamic;
-       }
-       if(isClimbingLadder){
-           canDoubleJump = true;
-           canDash = true;
-       }
-
-        //Create double jump
-       if(!isGrounded() && !dead && !isClimbingLadder && !isTeleporting){
-           if(Input.GetKeyDown(KeyCode.Space) && canDoubleJump){
-               StartCoroutine(Jump());
-               canDoubleJump = false;
-           }
-       }
-
        //Create dash 
-       if(timeSinceLastDash >= .4 && isGrounded() && !dead){
+       if(timeSinceLastDash >= .4 && !dead){
            canDash = true;
        }
 
@@ -169,21 +108,14 @@ public class playerMovement : MonoBehaviour
            }
        }
 
-       //FastFall
-       if(!isGrounded() && !dead && !isClimbingLadder && !isTeleporting){
-           if(Input.GetKeyDown(KeyCode.DownArrow)){
-               fastFall = true;
-           }
-       }
-
 
        //Ladder Climb
        if(onLadder && !dead){
            if(Input.GetAxis("Vertical") != 0){
                if(!isClimbingLadder){
-                   if(isGrounded() && Input.GetAxis("Vertical") > 0){
+                   if(Input.GetAxis("Vertical") > 0){
                         anim.SetTrigger("startClimb");
-                   }else if(!isGrounded()){
+                   }else{
                         anim.SetTrigger("startClimb");
                    }
                }
@@ -197,99 +129,102 @@ public class playerMovement : MonoBehaviour
        }
 
 
-        if(!dead && !isTeleporting){
-            //Flips player sprite around when turning left or turning right
-            if(horizontalInput > 0.01f && isDashing == false && !isAttacking){
+        
+
+        //Animations
+        //Handle Walk Directional Animations
+        //Walk Direction:
+        //1 = Up
+        //-1 = Down
+        //0 = Side
+
+        if(horizontalInput == 0 && verticalInput > 0){
+            walkDirection = 1;
+            if(!anim.GetCurrentAnimatorStateInfo(0).IsName("PlayerSideAttack")){
                 transform.localScale = new Vector2(1,1);
             }
-            else if(horizontalInput < -0.01f && isDashing == false && !isAttacking){
-                transform.localScale = new Vector2(-1, 1);
+            //print("changing to UP VIEW");
+        }else if(horizontalInput == 0 && verticalInput < 0){
+            walkDirection = -1;
+            if(!anim.GetCurrentAnimatorStateInfo(0).IsName("PlayerSideAttack")){
+                transform.localScale = new Vector2(1,1);
             }
+            //print("changing to DOWN VIEW");
+        }else if(horizontalInput != 0 && verticalInput == 0){
+            walkDirection = 0;
+            if(!dead && !isTeleporting){
+                //Flips player sprite around when turning left or turning right
+                if(horizontalInput > 0.01f && !isDashing && !isAttacking){
+                    transform.localScale = new Vector2(1,1);
+                }
+                else if(horizontalInput < -0.01f && !isDashing && !isAttacking){
+                    transform.localScale = new Vector2(-1, 1);
+                }
+            }
+            //print("CHANGING TO SIDE VIEW");
         }
 
-        if(dead){
-            StopCoroutine(Jump());
-            StopCoroutine(Dash());
-        }
-       //Animations
-        anim.SetBool("walk", horizontalInput != 0);
-        anim.SetBool("grounded", isGrounded());
-        anim.SetBool("onLadder", isClimbingLadder);
-        anim.SetBool("isTeleporting", isTeleporting);
+        //Movement
+
+
+        anim.SetInteger("WalkDirection", walkDirection);
+        anim.SetBool("Walking", (horizontalInput != 0 || verticalInput != 0));
+        //anim.SetBool("onLadder", isClimbingLadder);
+        //anim.SetBool("isTeleporting", isTeleporting);
    }
 
     private void FixedUpdate() {
-        if(move){
-            body.velocity = new Vector2(Input.GetAxis("Horizontal") * weaponSpeed, body.velocity.y);
+       if(move){
+            Vector2 moveVect = new Vector3(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            moveVect = Vector3.ClampMagnitude(moveVect, 1f) * baseSpeed * Time.deltaTime;
+            //print(moveVect + "moveVect");
+            body.MovePosition(body.position + moveVect);
             move = false;
         }
         if(isDashing){
-            body.velocity = new Vector2(dashInputDirection, 0).normalized * dashSpeed;
+            Vector2 moveVect = new Vector3(dashInputDirectionX, dashInputDirectionY);
+            moveVect = Vector3.ClampMagnitude(moveVect, 1f) * dashSpeed * Time.deltaTime;
+            //print(moveVect + "moveVect");
+            body.MovePosition(body.position + moveVect);            
         }
         if(isTeleporting){
             body.velocity = new Vector2(0, body.velocity.y);
         }
-        if(jump){
-            body.velocity = new Vector2(body.velocity.x, jumpSpeed);
-        }
-        if(fastFall){
-            const int fallSpeed = -15;
-            body.velocity  = new Vector2(body.velocity.x, fallSpeed);
-            fastFall = false;
-        }
         if(climbLadderBool){
             //print(inputDirection);
-            if(ladderInputDirection == 0){
-                body.bodyType = RigidbodyType2D.Kinematic;
-            }
-            else{
-                body.bodyType = RigidbodyType2D.Dynamic;
-            }
-
             body.velocity = new Vector2(0, ladderInputDirection * ladderClimbSpeed);
             climbLadderBool = false;
         }
-       
    }
 
-   private IEnumerator Jump(){
-       //int jumpSpeed = 8;
-       float startTime = Time.time;
-       float jumpTime = .25f;
-       jump = true;
-       anim.SetTrigger("jump");
-        while(Time.time < startTime + jumpTime){
-            yield return null;
-        }
-        jump = false;
-       timeSinceLastJump = 0;
-   }
+    public float getVerticalInput(){
+        return verticalInput;
+    }
 
-   private void doubleJump(){
-       //int jumpSpeed = 11;
-       body.velocity = new Vector2(body.velocity.x, jumpSpeed);
-        anim.SetTrigger("jump");
-   }
-
+    public float getHorizontalInput(){
+        return horizontalInput;
+    }
    private IEnumerator Dash(){
        float startTime = Time.time;
        dashTime = .22f;
        float immunityTime = .12f;
        anim.SetTrigger("dash");
        canDash = false;
-       dashInputDirection = Input.GetAxis("Horizontal");
-       if(dashInputDirection == 0){
-           if(transform.localScale.x == 1){
-               dashInputDirection = 1;
-           }else{
-               dashInputDirection = -1;
+       dashInputDirectionX = Input.GetAxisRaw("Horizontal");
+       dashInputDirectionY = Input.GetAxisRaw("Vertical");
+       if(dashInputDirectionX == 0 && dashInputDirectionY == 0){
+           if(walkDirection == 0){
+                if(transform.localScale.x == 1){
+                    dashInputDirectionX = 1;
+                }else{
+                    dashInputDirectionX = -1;
+                }
            }
-       }
-       if(Mathf.Sign(dashInputDirection) == 1){
-           transform.localScale = new Vector2(1,1);
-       }
-       else{
-           transform.localScale = new Vector2(-1,1);
+           else if(walkDirection == -1){
+               dashInputDirectionY = -1;
+           }else if(walkDirection == 1){
+               dashInputDirectionY = 1;
+           }
        }
        isDashing = true;
        //print("ignoring collision true");
@@ -312,64 +247,20 @@ public class playerMovement : MonoBehaviour
         timeSinceLastDash = 0;
    }
 
-   public bool isGrounded(){
-       //Commented out raycastHit: old method, gave trouble when swapping sprites, needed to be hardcoded in (hence 2).
-       //RaycastHit2D raycastHit = Physics2D.BoxCast(transform.position, boxCollider.size, 0, Vector2.down, 2, groundLayer);
-       RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider.bounds.center, boxCollider.bounds.size, 0, Vector2.down, 0.1f, groundLayer);
-       //print("isGrounded: " + (raycastHit.collider != null));
-       return raycastHit.collider != null;
-   }
-
-   private bool onWall(){
-       RaycastHit2D raycastHit = Physics2D.BoxCast(boxCollider.bounds.center, boxCollider.bounds.size, 0, new Vector2(transform.localScale.x, 0), 0.1f, wallLayer);
-       //print("onWall: " + (raycastHit.collider != null));
-        return raycastHit.collider != null;
-   }
-
-   public void weaponSwap(){
-       if(nextWep == 1){
-           anim.runtimeAnimatorController = LSOverride;
-           currentWep = nextWep;
-           weaponSpeed = baseSpeed;
-           //print("Weapon swapped to: Longsword");
-           return;
-       }
-       if(nextWep == 2){
-           anim.runtimeAnimatorController = GSOverride;
-           currentWep = nextWep;
-           weaponSpeed = baseSpeed - 2;
-           //print("Weapon swapped to: Greatsword");
-           return;
-       }
-       if(nextWep == 3){
-           anim.runtimeAnimatorController = DGOverride;
-           currentWep = nextWep;
-           weaponSpeed = baseSpeed + 2;
-           //print("Weapon swapped to: Dagger");
-           return;
-       }
-
-       return;
-
-   }
-
 
     public bool canAttack(){
-        return !isDashing && isGrounded() && !isAttacking;
+        return !isDashing && !isAttacking;
     }
 
-
-
-    public float getWeapon(){
-        return currentWep;
-    }
 
     public void takeDamage(){
         playerAttributes.remHealth(20);
     }
 
     public bool getIsAttacking(){
-        if((anim.GetCurrentAnimatorStateInfo(0).IsName("horizontalAttack") || 
+        if((anim.GetCurrentAnimatorStateInfo(0).IsName("PlayerSideAttack") || 
+        anim.GetCurrentAnimatorStateInfo(0).IsName("PlayerUpAttack") ||
+        anim.GetCurrentAnimatorStateInfo(0).IsName("PlayerDownAttack") ||
         anim.GetCurrentAnimatorStateInfo(0).IsName("Special") ||
         anim.GetCurrentAnimatorStateInfo(0).IsName("Drink")) && !anim.IsInTransition(0)){
            isAttacking = true;
@@ -403,7 +294,6 @@ public class playerMovement : MonoBehaviour
             //print(onLadder);
             Ladder = null;
             //print(Ladder);
-            body.bodyType = RigidbodyType2D.Dynamic;
         }
     }
 

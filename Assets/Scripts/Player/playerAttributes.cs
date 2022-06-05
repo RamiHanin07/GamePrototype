@@ -59,8 +59,7 @@ public class playerAttributes : MonoBehaviour
     void FixedUpdate()
     {
         
-        if((playerMovement.getisClimbingLadder() || anim.GetCurrentAnimatorStateInfo(0).IsName("Idle") || 
-            anim.GetCurrentAnimatorStateInfo(0).IsName("Walk") ) && !anim.IsInTransition(0)){
+        if(checkStaminaGain()){
             addStamina(.7f);   
         }
 
@@ -166,6 +165,7 @@ public class playerAttributes : MonoBehaviour
         //print(stamina);
         if(stamina < 0){
             negativeStam = true;
+            //print("negative stamina");
         }
         if(stamina < -50){
             stamina = -50;
@@ -279,6 +279,23 @@ public class playerAttributes : MonoBehaviour
         enemy.SetActive(false);
         enemy.SetActive(true);
         
+    }
+
+    private bool checkStaminaGain(){
+        if(playerMovement.getisClimbingLadder() || 
+        anim.GetCurrentAnimatorStateInfo(0).IsName("Idle Up") || 
+        anim.GetCurrentAnimatorStateInfo(0).IsName("Idle Side") ||
+        anim.GetCurrentAnimatorStateInfo(0).IsName("Idle Down") ||
+        anim.GetCurrentAnimatorStateInfo(0).IsName("Walk Up") || 
+        anim.GetCurrentAnimatorStateInfo(0).IsName("Walk Side") ||
+        anim.GetCurrentAnimatorStateInfo(0).IsName("Walk Down") && 
+        !anim.IsInTransition(0)){
+            return true;
+        }else{
+            return false;
+        }
+
+
     }
 
 

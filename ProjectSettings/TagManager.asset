@@ -20,7 +20,7 @@ TagManager:
   - Ladder
   - Player
   - Enemy
-  - 
+  - Terrain
   - 
   - 
   - 
@@ -45,6 +45,12 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Terrain
+    uniqueID: 1268582329
+    locked: 0
   - name: UI
     uniqueID: 2307708115
+    locked: 0
+  - name: Player
+    uniqueID: 2830941397
     locked: 0
